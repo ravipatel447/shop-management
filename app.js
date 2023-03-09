@@ -17,6 +17,8 @@ const Product = require("./models/product");
 const User = require("./models/user");
 const Cart = require("./models/cart");
 const CartItem = require("./models/cart-item");
+const Order = require("./models/order");
+const OrderItem = require("./models/order-item");
 // db.execute("SELECT * FROM products")
 //   .then(([res]) => {
 //     console.log(res);
@@ -50,7 +52,10 @@ User.hasOne(Cart);
 Cart.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
 Cart.belongsToMany(Product, { through: CartItem });
 Product.belongsToMany(Cart, { through: CartItem });
-// Product.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
+Order.belongsTo(User);
+User.hasMany(Order);
+Order.belongsToMany(Product, { through: OrderItem });
+Product.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
 
 sequelize
   // .sync({ force: true })
@@ -63,17 +68,23 @@ sequelize
       return user;
     } else {
       const user = User.create({ name: "ravi", email: "ravi@simform.com" });
+      // user.createCart();
       return user;
     }
   })
-  // .then((user) => {
-  //   const cart = user.getCart();
-  //   console.log(cart);
-  //   if (!cart) {
-  //     // user.createCart();
-  //   }
-  //   return cart;
-  // })
+  .then((user) => {
+    user
+      .getCart()
+      .then((cart) => {
+        if (!cart) {
+          user.createCart();
+        }
+      })
+      .catch((err) => {
+        user.createCart();
+      });
+    return user;
+  })
   .then(() => {
     app.listen(3000);
   })
